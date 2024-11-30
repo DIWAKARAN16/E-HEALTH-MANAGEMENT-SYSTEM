@@ -1,24 +1,377 @@
-# Compiled class file
-*.class
 
-# Log file
-*.log
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
 
-# BlueJ files
-*.ctxt
+class Appointment {
+    String patientName;
+    int patientAge;
+    String appointmentDate;
+    String appointmentTime;
+    String doctorName;
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+    Appointment(String patientName, int patientAge, String appointmentDate, String appointmentTime, String doctorName) {
+        this.patientName = patientName;
+        this.patientAge = patientAge;
+        this.appointmentDate = appointmentDate;
+        this.appointmentTime = appointmentTime;
+        this.doctorName = doctorName;
+    }
+}
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+class Doctor {
+    String name;
+    String gender;
+    String phoneNumber;
+    String specialization;
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
+    Doctor(String name, String gender, String phoneNumber, String specialization) {
+        this.name = name;
+        this.gender = gender;
+        this.phoneNumber = phoneNumber;
+        this.specialization = specialization;
+    }
+}
+
+public class EHealthManagementSystem {
+    private static HashMap<String, Doctor> doctors = new HashMap<>();
+    private static ArrayList<String> services = new ArrayList<>();
+    private static ArrayList<Appointment> appointments = new ArrayList<>();
+    private static String loggedInUser = null;
+
+    public static void main(String[] args) {
+        Frame loginFrame = new Frame("E-Health Management System - Login");
+        loginFrame.setSize(400, 300);
+        loginFrame.setLayout(null);
+
+        Label usernameLabel = new Label("Username:");
+        TextField usernameField = new TextField();
+        Label passwordLabel = new Label("Password:");
+        TextField passwordField = new TextField();
+        passwordField.setEchoChar('*');
+        Choice roleChoice = new Choice();
+        roleChoice.add("Admin");
+        roleChoice.add("Patient");
+        Button loginButton = new Button("Login");
+
+        usernameLabel.setBounds(50, 50, 100, 20);
+        usernameField.setBounds(150, 50, 200, 20);
+        passwordLabel.setBounds(50, 100, 100, 20);
+        passwordField.setBounds(150, 100, 200, 20);
+        roleChoice.setBounds(150, 150, 200, 20);
+        loginButton.setBounds(150, 200, 100, 30);
+
+        loginFrame.add(usernameLabel);
+        loginFrame.add(usernameField);
+        loginFrame.add(passwordLabel);
+        loginFrame.add(passwordField);
+        loginFrame.add(roleChoice);
+        loginFrame.add(loginButton);
+
+        loginButton.addActionListener(e -> {
+            String username = usernameField.getText();
+            String password = passwordField.getText();
+            String role = roleChoice.getSelectedItem();
+
+            if ("admin".equals(username) && "admin".equals(password) && "Admin".equals(role)) {
+                loggedInUser = username;
+                loginFrame.setVisible(false);
+                openAdminPanel();
+            } else if ("patient".equals(username) && "patient".equals(password) && "Patient".equals(role)) {
+                loggedInUser = username;
+                loginFrame.setVisible(false);
+                openPatientPanel();
+            } else {
+                showMessageDialog("Invalid credentials! Please try again.", loginFrame);
+            }
+        });
+
+        loginFrame.setVisible(true);
+    }
+
+    private static void openAdminPanel() {
+        Frame adminFrame = new Frame("Admin Panel");
+        adminFrame.setSize(400, 400);
+        adminFrame.setLayout(null);
+
+        Button addDoctorButton = new Button("Add Doctor");
+        Button addServiceButton = new Button("Add Service");
+        Button viewAppointmentsButton = new Button("View Appointments");
+        Button logoutButton = new Button("Logout");
+
+        addDoctorButton.setBounds(120, 50, 150, 30);
+        addServiceButton.setBounds(120, 100, 150, 30);
+        viewAppointmentsButton.setBounds(120, 150, 150, 30);
+        logoutButton.setBounds(120, 200, 150, 30);
+
+        adminFrame.add(addDoctorButton);
+        adminFrame.add(addServiceButton);
+        adminFrame.add(viewAppointmentsButton);
+        adminFrame.add(logoutButton);
+
+        addDoctorButton.addActionListener(e -> openAddDoctorFrame(adminFrame));
+        addServiceButton.addActionListener(e -> openAddServiceFrame(adminFrame));
+        viewAppointmentsButton.addActionListener(e -> viewAppointments(adminFrame));
+        logoutButton.addActionListener(e -> {
+            loggedInUser = null;
+            adminFrame.setVisible(false);
+            main(null);
+        });
+
+        adminFrame.setVisible(true);
+    }
+
+    private static void openPatientPanel() {
+        Frame patientFrame = new Frame("Patient Panel");
+        patientFrame.setSize(400, 400);
+        patientFrame.setLayout(null);
+
+        Button bookAppointmentButton = new Button("Book Appointment");
+        Button cancelAppointmentButton = new Button("Cancel Appointment");
+        Button viewServicesButton = new Button("View Services");
+        Button logoutButton = new Button("Logout");
+
+        bookAppointmentButton.setBounds(120, 50, 150, 30);
+        cancelAppointmentButton.setBounds(120, 100, 150, 30);
+        viewServicesButton.setBounds(120, 150, 150, 30);
+        logoutButton.setBounds(120, 200, 150, 30);
+
+        patientFrame.add(bookAppointmentButton);
+        patientFrame.add(cancelAppointmentButton);
+        patientFrame.add(viewServicesButton);
+        patientFrame.add(logoutButton);
+
+        bookAppointmentButton.addActionListener(e -> openBookAppointmentFrame(patientFrame));
+        cancelAppointmentButton.addActionListener(e -> openCancelAppointmentFrame(patientFrame));
+        viewServicesButton.addActionListener(e -> viewServices(patientFrame));
+        logoutButton.addActionListener(e -> {
+            loggedInUser = null;
+            patientFrame.setVisible(false);
+            main(null);
+        });
+
+        patientFrame.setVisible(true);
+    }
+
+    private static void showMessageDialog(String message, Frame frame) {
+        Dialog dialog = new Dialog(frame, "Message", true);
+        dialog.setSize(400, 200);
+        dialog.setLayout(new FlowLayout());
+        Label messageLabel = new Label(message);
+        Button okButton = new Button("OK");
+        okButton.addActionListener(e -> dialog.setVisible(false));
+        dialog.add(messageLabel);
+        dialog.add(okButton);
+        dialog.setVisible(true);
+    }
+
+    private static void openAddDoctorFrame(Frame parentFrame) {
+        Frame addDoctorFrame = new Frame("Add Doctor");
+        addDoctorFrame.setSize(400, 300);
+        addDoctorFrame.setLayout(null);
+
+        Label nameLabel = new Label("Name:");
+        Label genderLabel = new Label("Gender:");
+        Label phoneLabel = new Label("Phone:");
+        Label specializationLabel = new Label("Specialization:");
+        TextField nameField = new TextField();
+        TextField genderField = new TextField();
+        TextField phoneField = new TextField();
+        TextField specializationField = new TextField();
+        Button addButton = new Button("Add");
+
+        nameLabel.setBounds(50, 50, 100, 20);
+        nameField.setBounds(150, 50, 200, 20);
+        genderLabel.setBounds(50, 80, 100, 20);
+        genderField.setBounds(150, 80, 200, 20);
+        phoneLabel.setBounds(50, 110, 100, 20);
+        phoneField.setBounds(150, 110, 200, 20);
+        specializationLabel.setBounds(50, 140, 100, 20);
+        specializationField.setBounds(150, 140, 200, 20);
+        addButton.setBounds(150, 200, 100, 30);
+
+        addDoctorFrame.add(nameLabel);
+        addDoctorFrame.add(nameField);
+        addDoctorFrame.add(genderLabel);
+        addDoctorFrame.add(genderField);
+        addDoctorFrame.add(phoneLabel);
+        addDoctorFrame.add(phoneField);
+        addDoctorFrame.add(specializationLabel);
+        addDoctorFrame.add(specializationField);
+        addDoctorFrame.add(addButton);
+
+        addButton.addActionListener(e -> {
+            String name = nameField.getText();
+            String gender = genderField.getText();
+            String phone = phoneField.getText();
+            String specialization = specializationField.getText();
+
+            if (!name.isEmpty() && !gender.isEmpty() && !phone.isEmpty() && !specialization.isEmpty()) {
+                doctors.put(name, new Doctor(name, gender, phone, specialization));
+                showMessageDialog("Doctor added successfully!", addDoctorFrame);
+            } else {
+                showMessageDialog("All fields are required!", addDoctorFrame);
+            }
+        });
+
+        addDoctorFrame.setVisible(true);
+    }
+
+    private static void openAddServiceFrame(Frame parentFrame) {
+        Frame addServiceFrame = new Frame("Add Service");
+        addServiceFrame.setSize(400, 200);
+        addServiceFrame.setLayout(null);
+
+        Label serviceLabel = new Label("Service:");
+        TextField serviceField = new TextField();
+        Button addButton = new Button("Add");
+
+        serviceLabel.setBounds(50, 50, 100, 20);
+        serviceField.setBounds(150, 50, 200, 20);
+        addButton.setBounds(150, 100, 100, 30);
+
+        addServiceFrame.add(serviceLabel);
+        addServiceFrame.add(serviceField);
+        addServiceFrame.add(addButton);
+
+        addButton.addActionListener(e -> {
+            String service = serviceField.getText();
+            if (!service.isEmpty()) {
+                services.add(service);
+                showMessageDialog("Service added successfully!", addServiceFrame);
+            } else {
+                showMessageDialog("Service cannot be empty!", addServiceFrame);
+            }
+        });
+
+        addServiceFrame.setVisible(true);
+    }
+
+    private static void openBookAppointmentFrame(Frame parentFrame) {
+        Frame bookAppointmentFrame = new Frame("Book Appointment");
+        bookAppointmentFrame.setSize(400, 400);
+        bookAppointmentFrame.setLayout(null);
+
+        Label nameLabel = new Label("Patient Name:");
+        Label ageLabel = new Label("Age:");
+        Label dateLabel = new Label("Date (YYYY-MM-DD):");
+        Label timeLabel = new Label("Time (HH:MM):");
+        Label doctorLabel = new Label("Doctor:");
+        TextField nameField = new TextField();
+        TextField ageField = new TextField();
+        TextField dateField = new TextField();
+        TextField timeField = new TextField();
+        Choice doctorChoice = new Choice();
+        Button bookButton = new Button("Book");
+
+        for (String doctorName : doctors.keySet()) {
+            doctorChoice.add(doctorName);
+        }
+
+        nameLabel.setBounds(50, 50, 150, 20);
+        nameField.setBounds(200, 50, 150, 20);
+        ageLabel.setBounds(50, 80, 150, 20);
+        ageField.setBounds(200, 80, 150, 20);
+        dateLabel.setBounds(50, 110, 150, 20);
+        dateField.setBounds(200, 110, 150, 20);
+        timeLabel.setBounds(50, 140, 150, 20);
+        timeField.setBounds(200, 140, 150, 20);
+        doctorLabel.setBounds(50, 170, 150, 20);
+        doctorChoice.setBounds(200, 170, 150, 20);
+        bookButton.setBounds(150, 250, 100, 30);
+
+        bookAppointmentFrame.add(nameLabel);
+        bookAppointmentFrame.add(nameField);
+        bookAppointmentFrame.add(ageLabel);
+        bookAppointmentFrame.add(ageField);
+        bookAppointmentFrame.add(dateLabel);
+        bookAppointmentFrame.add(dateField);
+        bookAppointmentFrame.add(timeLabel);
+        bookAppointmentFrame.add(timeField);
+        bookAppointmentFrame.add(doctorLabel);
+        bookAppointmentFrame.add(doctorChoice);
+        bookAppointmentFrame.add(bookButton);
+
+        bookButton.addActionListener(e -> {
+            String name = nameField.getText();
+            String ageText = ageField.getText();
+            String date = dateField.getText();
+            String time = timeField.getText();
+            String doctor = doctorChoice.getSelectedItem();
+
+            if (!name.isEmpty() && !ageText.isEmpty() && !date.isEmpty() && !time.isEmpty() && doctor != null) {
+                try {
+                    int age = Integer.parseInt(ageText);
+
+                    // Check for duplicate appointment
+                    boolean duplicate = appointments.stream()
+                            .anyMatch(app -> app.doctorName.equals(doctor)
+                                    && app.appointmentDate.equals(date)
+                                    && app.appointmentTime.equals(time));
+
+                    if (duplicate) {
+                        showMessageDialog("The selected doctor already has an appointment at this date and time!", bookAppointmentFrame);
+                    } else {
+                        appointments.add(new Appointment(name, age, date, time, doctor));
+                        showMessageDialog("Appointment booked successfully!", bookAppointmentFrame);
+                    }
+                } catch (NumberFormatException ex) {
+                    showMessageDialog("Invalid age entered!", bookAppointmentFrame);
+                }
+            } else {
+                showMessageDialog("All fields are required!", bookAppointmentFrame);
+            }
+        });
+
+        bookAppointmentFrame.setVisible(true);
+    }
+
+    private static void openCancelAppointmentFrame(Frame parentFrame) {
+        Frame cancelFrame = new Frame("Cancel Appointment");
+        cancelFrame.setSize(400, 300);
+        cancelFrame.setLayout(null);
+
+        Label nameLabel = new Label("Patient Name:");
+        TextField nameField = new TextField();
+        Button cancelButton = new Button("Cancel Appointment");
+
+        nameLabel.setBounds(50, 50, 100, 20);
+        nameField.setBounds(150, 50, 200, 20);
+        cancelButton.setBounds(150, 100, 150, 30);
+
+        cancelFrame.add(nameLabel);
+        cancelFrame.add(nameField);
+        cancelFrame.add(cancelButton);
+
+        cancelButton.addActionListener(e -> {
+            String patientName = nameField.getText();
+            boolean removed = appointments.removeIf(appointment -> appointment.patientName.equalsIgnoreCase(patientName));
+            if (removed) {
+                showMessageDialog("Appointment canceled successfully!", cancelFrame);
+            } else {
+                showMessageDialog("No appointment found for the given name!", cancelFrame);
+            }
+        });
+
+        cancelFrame.setVisible(true);
+    }
+
+    private static void viewAppointments(Frame parentFrame) {
+        StringBuilder appointmentsList = new StringBuilder("Appointments:\n");
+        for (Appointment appointment : appointments) {
+            appointmentsList.append("Patient: ").append(appointment.patientName)
+                    .append(", Doctor: ").append(appointment.doctorName)
+                    .append(", Date: ").append(appointment.appointmentDate)
+                    .append(", Time: ").append(appointment.appointmentTime).append("\n");
+        }
+        showMessageDialog(appointmentsList.toString(), parentFrame);
+    }
+
+    private static void viewServices(Frame parentFrame) {
+        StringBuilder serviceList = new StringBuilder("Services Available:\n");
+        for (String service : services) {
+            serviceList.append(service).append("\n");
+        }
+        showMessageDialog(serviceList.toString(), parentFrame);
+    }
+}
